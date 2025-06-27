@@ -35,16 +35,6 @@
 			path = SmartCamera;
 			sourceTree = "<group>";
 		};
-		4EFD8F072E0EEFC1006DD146 /* SmartCameraTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = SmartCameraTests;
-			sourceTree = "<group>";
-		};
-		4EFD8F112E0EEFC1006DD146 /* SmartCameraUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = SmartCameraUITests;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -76,8 +66,6 @@
 			isa = PBXGroup;
 			children = (
 				4EFD8EF62E0EEFBF006DD146 /* SmartCamera */,
-				4EFD8F072E0EEFC1006DD146 /* SmartCameraTests */,
-				4EFD8F112E0EEFC1006DD146 /* SmartCameraUITests */,
 				4EFD8EF52E0EEFBF006DD146 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -130,9 +118,6 @@
 			dependencies = (
 				4EFD8F062E0EEFC1006DD146 /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				4EFD8F072E0EEFC1006DD146 /* SmartCameraTests */,
-			);
 			name = SmartCameraTests;
 			packageProductDependencies = (
 			);
@@ -152,9 +137,6 @@
 			);
 			dependencies = (
 				4EFD8F102E0EEFC1006DD146 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				4EFD8F112E0EEFC1006DD146 /* SmartCameraUITests */,
 			);
 			name = SmartCameraUITests;
 			packageProductDependencies = (
