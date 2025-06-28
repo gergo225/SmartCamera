@@ -8,10 +8,12 @@
 import SwiftUI
 
 struct ContentView: View {
-    private let imageUrl = Bundle.main.url(forResource: "tree_image", withExtension: "jpg")!
+    private let imageUrl = Bundle.main.url(forResource: "horizon", withExtension: "jpg")!
 
     var body: some View {
-        ImageAnalyzerView(imageUrl: imageUrl)
+        NavigationStack {
+            ImageAnalyzerView(imageUrl: imageUrl)
+        }
     }
 }
 

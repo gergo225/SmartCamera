@@ -9,7 +9,7 @@ import Vision
 final class VisionManager {
     static let shared = VisionManager()
 
-    func detectImageContours(url: URL) async -> [CGPoint] {
+    func detectImageContours(url: URL, showNestedContours: Bool = false) async -> [CGPoint] {
         do {
             return try await withCheckedThrowingContinuation { continuation in
                 let request = VNDetectContoursRequest { request, error in
@@ -19,17 +19,14 @@ final class VisionManager {
                     }
 
                     if let results = request.results as? [VNContoursObservation] {
-//                        let paths = results.flatMap { $0.topLevelContours }.map { $0.normalizedPath }
-
-                        // TODO: this gets contours that are inside other contours too (aka. nested contours)
-//                        let contours = results.flatMap { contour in
-//                            (0..<contour.contourCount).map { index in
-//                                try? contour.contour(at: index)
-//                            }
-//                        }
-
                         let contours: [VNContour?] = results.flatMap { contour in
-                            contour.topLevelContours
+                            if showNestedContours {
+                                (0..<contour.contourCount).map { index in
+                                    try? contour.contour(at: index)
+                                }
+                            } else {
+                                contour.topLevelContours
+                            }
                         }
 
                         let points = contours.compactMap {
