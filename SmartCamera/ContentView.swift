@@ -12,7 +12,8 @@ struct ContentView: View {
 
     var body: some View {
         NavigationStack {
-            ImageAnalyzerView(imageUrl: imageUrl)
+//            ImageAnalyzerView(imageUrl: imageUrl)
+            VideoAnalyzerView()
         }
     }
 }
