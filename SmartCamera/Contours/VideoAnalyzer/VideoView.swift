@@ -11,6 +11,7 @@ import AVFoundation
 struct VideoView: UIViewControllerRepresentable {
     let onFrameCaptured: (CVPixelBuffer) -> Void
     @Binding var videoFrameSize: CGSize
+    @Binding var videoFrameOffset: CGPoint
 
     let captureSession = AVCaptureSession()
 
@@ -34,10 +35,10 @@ struct VideoView: UIViewControllerRepresentable {
 
         let previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
         previewLayer.frame = viewController.view.bounds
-        previewLayer.videoGravity = .resizeAspectFill
+        previewLayer.videoGravity = .resizeAspect
         viewController.view.layer.addSublayer(previewLayer)
 
-        context.coordinator.previewLayerSize = previewLayer.frame.size
+        context.coordinator.previewLayer = previewLayer
 
         // Set output rotation to match rotation seen in preview, otherwise output is rotated by default to landscape
         if let videoOutputConnection = videoOutput.connection(with: .video) {
@@ -59,7 +60,7 @@ struct VideoView: UIViewControllerRepresentable {
 
     class Coordinator: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
         var parent: VideoView
-        var previewLayerSize: CGSize = .zero
+        var previewLayer: AVCaptureVideoPreviewLayer?
 
         init(_ parent: VideoView) {
             self.parent = parent
@@ -68,21 +69,42 @@ struct VideoView: UIViewControllerRepresentable {
         func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
             guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
 
-            // TODO: bug: width still doesn't match preview layer
-            if self.parent.videoFrameSize == .zero, previewLayerSize != .zero {
-                DispatchQueue.main.async { [weak self] in
-                    guard let self else { return }
-                    self.parent.videoFrameSize = self.previewLayerSize
+            if let previewLayer, self.parent.videoFrameSize == .zero {
+                let previewFrame = previewLayer.frame
+
+                let imageSize = calculateImageSize(pixelBuffer: pixelBuffer, in: previewLayer.frame)
+                let imageOffset = calculateImageOffset(imageSize: imageSize, in: previewFrame)
+
+                DispatchQueue.main.async {
+                    self.parent.videoFrameSize = imageSize
+                    self.parent.videoFrameOffset = imageOffset
                 }
             }
 
-//            let width = CVPixelBufferGetWidth(pixelBuffer) //
-//            let height = CVPixelBufferGetHeight(pixelBuffer)  // 2
-//            DispatchQueue.main.async {
-//                self.parent.videoFrameSize = CGSize(width: width, height: height)
-//            }
-
             parent.onFrameCaptured(pixelBuffer)
+        }
+
+        private func calculateImageSize(pixelBuffer: CVPixelBuffer, in frame: CGRect) -> CGSize {
+            let fullImageWidth = CVPixelBufferGetWidth(pixelBuffer)
+            let fullImageHeight = CVPixelBufferGetHeight(pixelBuffer)
+
+            let widthRatio = CGFloat(fullImageWidth) / frame.width
+            let heightRatio = CGFloat(fullImageHeight) / frame.height
+
+            // ScaleAspectFit
+            let scaleDownRatio = max(widthRatio, heightRatio)
+
+            let imageWidth = CGFloat(fullImageWidth) / scaleDownRatio
+            let imageHeight = CGFloat(fullImageHeight) / scaleDownRatio
+
+            return CGSize(width: imageWidth, height: imageHeight)
+        }
+
+        private func calculateImageOffset(imageSize: CGSize, in frame: CGRect) -> CGPoint {
+            let xOffset = (frame.width - imageSize.width) / 2
+            let yOffset = frame.minY + (frame.height - imageSize.height) / 2
+
+            return CGPoint(x: xOffset, y: yOffset)
         }
     }
 }
