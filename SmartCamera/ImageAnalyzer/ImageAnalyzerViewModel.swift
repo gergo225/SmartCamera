@@ -9,10 +9,10 @@ import Foundation
 
 @Observable
 class ImageAnalyzerViewModel {
-    private let visionManager = VisionManager.shared
-
     var contourPoints: [CGPoint] = []
     var isAnalyzing: Bool = false
+
+    private let visionManager = VisionManager.shared
 
     func analyzeImage(url: URL, showDetails: Bool = false) {
         isAnalyzing = true

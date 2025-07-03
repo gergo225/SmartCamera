@@ -10,6 +10,7 @@ import AVFoundation
 
 struct VideoView: UIViewControllerRepresentable {
     let onFrameCaptured: (CVPixelBuffer) -> Void
+    @Binding var videoFrameSize: CGSize
 
     let captureSession = AVCaptureSession()
 
@@ -36,6 +37,13 @@ struct VideoView: UIViewControllerRepresentable {
         previewLayer.videoGravity = .resizeAspectFill
         viewController.view.layer.addSublayer(previewLayer)
 
+        context.coordinator.previewLayerSize = previewLayer.frame.size
+
+        // Set output rotation to match rotation seen in preview, otherwise output is rotated by default to landscape
+        if let videoOutputConnection = videoOutput.connection(with: .video) {
+            videoOutputConnection.videoRotationAngle = previewLayer.connection!.videoRotationAngle
+        }
+
         Task(priority: .background) {
             captureSession.startRunning()
         }
@@ -51,6 +59,7 @@ struct VideoView: UIViewControllerRepresentable {
 
     class Coordinator: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
         var parent: VideoView
+        var previewLayerSize: CGSize = .zero
 
         init(_ parent: VideoView) {
             self.parent = parent
@@ -58,6 +67,21 @@ struct VideoView: UIViewControllerRepresentable {
 
         func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
             guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+
+            // TODO: bug: width still doesn't match preview layer
+            if self.parent.videoFrameSize == .zero, previewLayerSize != .zero {
+                DispatchQueue.main.async { [weak self] in
+                    guard let self else { return }
+                    self.parent.videoFrameSize = self.previewLayerSize
+                }
+            }
+
+//            let width = CVPixelBufferGetWidth(pixelBuffer) //
+//            let height = CVPixelBufferGetHeight(pixelBuffer)  // 2
+//            DispatchQueue.main.async {
+//                self.parent.videoFrameSize = CGSize(width: width, height: height)
+//            }
+
             parent.onFrameCaptured(pixelBuffer)
         }
     }

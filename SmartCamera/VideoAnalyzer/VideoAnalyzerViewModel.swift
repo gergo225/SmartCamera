@@ -10,8 +10,27 @@ import AVFoundation
 
 @Observable
 final class VideoAnalyzerViewModel {
+    var contourPoints: [CGPoint] = []
+    var isProcessing: Bool = false
+
+    private let visionManager = VisionManager.shared
+
     func processFrame(_ pixelBuffer: CVPixelBuffer) {
+        guard !isProcessing else {
+            return
+        }
         print("Processing frame...")
-        // TODO: detect contours
+
+        isProcessing = true
+        Task { [weak self] in
+            guard let self else { return }
+
+            // TODO: make nested countours a switch
+            let coutourNormalizedPoints = await visionManager.detectImageContours(pixelBuffer: pixelBuffer, showNestedContours: true)
+            DispatchQueue.main.async { [weak self] in
+                self?.contourPoints = coutourNormalizedPoints
+                self?.isProcessing = false
+            }
+        }
     }
 }

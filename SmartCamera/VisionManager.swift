@@ -10,6 +10,16 @@ final class VisionManager {
     static let shared = VisionManager()
 
     func detectImageContours(url: URL, showNestedContours: Bool = false) async -> [CGPoint] {
+        let imageHandler = VNImageRequestHandler(url: url)
+        return await detectImageContours(handler: imageHandler, showNestedContours: showNestedContours)
+    }
+
+    func detectImageContours(pixelBuffer: CVPixelBuffer, showNestedContours: Bool = false) async -> [CGPoint] {
+        let pixelBufferHandler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, options: [:])
+        return await detectImageContours(handler: pixelBufferHandler, showNestedContours: showNestedContours)
+    }
+
+    private func detectImageContours(handler: VNImageRequestHandler, showNestedContours: Bool) async -> [CGPoint] {
         do {
             return try await withCheckedThrowingContinuation { continuation in
                 let request = VNDetectContoursRequest { request, error in
@@ -38,7 +48,6 @@ final class VisionManager {
                     }
                 }
 
-                let handler = VNImageRequestHandler(url: url)
 
                 do {
                     try handler.perform([request])
