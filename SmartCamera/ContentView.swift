@@ -8,12 +8,40 @@
 import SwiftUI
 
 struct ContentView: View {
-    private let imageUrl = Bundle.main.url(forResource: "horizon", withExtension: "jpg")!
+    enum Destination: Hashable {
+        case contours
+        case foregroundMask
+
+        var title: String {
+            switch self {
+            case .contours:
+                "Contours"
+            case .foregroundMask:
+                "Foreground mask"
+            }
+        }
+
+        static var allValues: [Destination] = [.contours, .foregroundMask]
+    }
 
     var body: some View {
         NavigationStack {
-//            ImageAnalyzerView(imageUrl: imageUrl)
-            VideoAnalyzerView()
+            List {
+                ForEach(Destination.allValues, id: \.self) { destination in
+                    NavigationLink(destination.title, value: destination)
+                }
+            }
+            .navigationDestination(for: Destination.self, destination: page)
+        }
+    }
+
+    @ViewBuilder
+    private func page(for destination: Destination) -> some View {
+        switch destination {
+        case .contours:
+            ContourAnalyzer()
+        case .foregroundMask:
+            ForegroundMaskAnalyzer()
         }
     }
 }
