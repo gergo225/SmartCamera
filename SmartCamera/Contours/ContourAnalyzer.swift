@@ -52,9 +52,9 @@ struct ContourAnalyzer: View {
         switch destination {
         case .image:
             let imageUrl = Bundle.main.url(forResource: "horizon", withExtension: "jpg")!
-            ImageAnalyzerView(imageUrl: imageUrl)
+            ImageContourView(imageUrl: imageUrl)
         case .video:
-            VideoAnalyzerView()
+            VideoContourView()
         }
     }
 }

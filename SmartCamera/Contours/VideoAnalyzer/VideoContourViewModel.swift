@@ -9,7 +9,7 @@ import Foundation
 import AVFoundation
 
 @Observable
-final class VideoAnalyzerViewModel {
+final class VideoContourViewModel {
     var contourPoints: [CGPoint] = []
     var isProcessing: Bool = false
 

@@ -7,8 +7,8 @@
 
 import SwiftUI
 
-struct VideoAnalyzerView: View {
-    @State private var viewModel = VideoAnalyzerViewModel()
+struct VideoContourView: View {
+    @State private var viewModel = VideoContourViewModel()
     @State private var videoSize: CGSize = .zero
     @State private var videoOffset: CGPoint = .zero
 

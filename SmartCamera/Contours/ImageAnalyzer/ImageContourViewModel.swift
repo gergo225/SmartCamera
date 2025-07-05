@@ -8,7 +8,7 @@
 import Foundation
 
 @Observable
-class ImageAnalyzerViewModel {
+class ImageContourViewModel {
     var contourPoints: [CGPoint] = []
     var isAnalyzing: Bool = false
 

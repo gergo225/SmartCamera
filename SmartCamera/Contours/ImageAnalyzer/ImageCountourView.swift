@@ -8,10 +8,10 @@
 import SwiftUI
 import Vision
 
-struct ImageAnalyzerView: View {
+struct ImageContourView: View {
     let imageUrl: URL
 
-    @State private var viewModel = ImageAnalyzerViewModel()
+    @State private var viewModel = ImageContourViewModel()
     @State private var image: UIImage? = nil
     @State private var shouldShowDetailedContours = false
 
