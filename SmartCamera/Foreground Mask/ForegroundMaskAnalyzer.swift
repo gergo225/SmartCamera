@@ -9,6 +9,8 @@ import SwiftUI
 
 struct ForegroundMaskAnalyzer: View {
     var body: some View {
-        Text("TODO: Foreground mask analyzer")
+        let imageUrl = Bundle.main.url(forResource: "cat", withExtension: "jpg")!
+
+        ForegroundMaskView(imageUrl: imageUrl)
     }
 }

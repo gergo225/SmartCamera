@@ -5,6 +5,7 @@
 //  Created by Fazekas, Gergo on 27.06.2025.
 //
 import Vision
+import CoreImage
 
 final class VisionManager {
     static let shared = VisionManager()
@@ -58,6 +59,45 @@ final class VisionManager {
         } catch {
             print("Failed to detect contours: \(error.localizedDescription)")
             return []
+        }
+    }
+
+    func detectImageForegroundMask(url: URL) async -> CIImage? {
+        do {
+            let imageHandler = VNImageRequestHandler(url: url)
+
+            return try await withCheckedThrowingContinuation { continuation in
+                let request = VNGenerateForegroundInstanceMaskRequest { request, error in
+                    if let error {
+                        print("Error generating foreground mask: \(error.localizedDescription)")
+                        continuation.resume(throwing: error)
+                    }
+
+                    guard let result = request.results?.first as? VNInstanceMaskObservation else {
+                        print("No foreground subjects were found")
+                        continuation.resume(returning: nil)
+                        return
+                    }
+
+                    do {
+                        let mask = try result.generateScaledMaskForImage(forInstances: result.allInstances, from: imageHandler)
+                        let maskImage = CIImage(cvPixelBuffer: mask)
+                        continuation.resume(returning: maskImage)
+                    } catch {
+                        print("Failed to generate mask: \(error.localizedDescription)")
+                        continuation.resume(returning: nil)
+                    }
+                }
+
+                do {
+                    try imageHandler.perform([request])
+                } catch {
+                    print("Failed to perform request: \(error.localizedDescription)")
+                }
+            }
+        } catch {
+            print("Failed to detect foreground mask: \(error.localizedDescription)")
+            return nil
         }
     }
 }
