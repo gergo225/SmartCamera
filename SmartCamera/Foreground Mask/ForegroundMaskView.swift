@@ -12,6 +12,7 @@ struct ForegroundMaskView: View {
 
     @State private var viewModel = ForegroundMaskViewModel()
     @State private var image: UIImage? = nil
+    @State private var shouldShowMask = true
 
     var body: some View {
         VStack {
@@ -21,7 +22,7 @@ struct ForegroundMaskView: View {
                         .resizable()
                         .scaledToFit()
 
-                    if let maskImage = viewModel.maskImage {
+                    if let maskImage = viewModel.maskImage, shouldShowMask {
                         Image(uiImage: maskImage)
                             .resizable()
                             .scaledToFit()
@@ -29,6 +30,17 @@ struct ForegroundMaskView: View {
                             .opacity(0.6)
                     }
                 }
+                .onLongPressGesture(
+                    minimumDuration: 0,
+                    perform: {
+                        shouldShowMask = false
+                    },
+                    onPressingChanged: { inProgress in
+                        if !inProgress {
+                            shouldShowMask = true
+                        }
+                    }
+                )
             } else {
                 Text("Loading image...")
             }
