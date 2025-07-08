@@ -11,6 +11,7 @@ struct ContentView: View {
     enum Destination: Hashable {
         case contours
         case foregroundMask
+        case face
 
         var title: String {
             switch self {
@@ -18,10 +19,12 @@ struct ContentView: View {
                 "Contours"
             case .foregroundMask:
                 "Foreground mask"
+            case .face:
+                "Face detection"
             }
         }
 
-        static var allValues: [Destination] = [.contours, .foregroundMask]
+        static var allValues: [Destination] = [.contours, .foregroundMask, .face]
     }
 
     var body: some View {
@@ -42,6 +45,8 @@ struct ContentView: View {
             ContourAnalyzer()
         case .foregroundMask:
             ForegroundMaskAnalyzer()
+        case .face:
+            FaceAnalyzer()
         }
     }
 }

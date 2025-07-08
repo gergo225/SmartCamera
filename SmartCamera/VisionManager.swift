@@ -100,4 +100,23 @@ final class VisionManager {
             return nil
         }
     }
+
+    func detectFace(data: Data) async -> FaceItem? {
+        do {
+            let imageHandler = ImageRequestHandler(data)
+
+            let detectFacesRequest = DetectFaceRectanglesRequest()
+
+            let faceObservations = try await imageHandler.perform(detectFacesRequest)
+
+            guard let faceRectangle = faceObservations.first  else {
+                return nil
+            }
+
+            return FaceItem(normalizedRect: faceRectangle.boundingBox)
+        } catch {
+            print("Failed to detect face: \(error.localizedDescription)")
+            return nil
+        }
+    }
 }
