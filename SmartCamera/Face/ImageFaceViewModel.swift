@@ -16,7 +16,7 @@ struct FaceItem {
 
 @Observable
 class ImageFaceViewModel {
-    var face: FaceItem?
+    var faces: [FaceItem] = []
     var photo: UIImage?
 
     private let visionManager = VisionManager.shared
@@ -31,13 +31,11 @@ class ImageFaceViewModel {
                 return
             }
 
-            guard let faceResult = await visionManager.detectFace(data: imageData) else {
-                return
-            }
+            let faceResults = await visionManager.detectFaces(data: imageData)
 
             DispatchQueue.main.async { [weak self] in
                 self?.photo = UIImage(data: imageData)
-                self?.face = faceResult
+                self?.faces = faceResults
             }
         }
     }

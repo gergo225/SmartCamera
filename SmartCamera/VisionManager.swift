@@ -101,7 +101,7 @@ final class VisionManager {
         }
     }
 
-    func detectFace(data: Data) async -> FaceItem? {
+    func detectFaces(data: Data) async -> [FaceItem] {
         do {
             let imageHandler = ImageRequestHandler(data)
 
@@ -113,16 +113,12 @@ final class VisionManager {
             detectLandmarksRequest.inputFaceObservations = faceObservations
 
             let faceLandmarks = try await imageHandler.perform(detectLandmarksRequest)
+            let faceRectangles = faceObservations.map { $0.boundingBox }
 
-            guard let faceRectangle = faceObservations.first, let faceLandmark = faceLandmarks.first else {
-                return nil
-            }
-            let faceRect = faceRectangle.boundingBox
-
-            return FaceItem(normalizedRect: faceRect, landmarkObservation: faceLandmark)
+            return zip(faceRectangles, faceLandmarks).map { FaceItem(normalizedRect: $0, landmarkObservation: $1) }
         } catch {
             print("Failed to detect face: \(error.localizedDescription)")
-            return nil
+            return []
         }
     }
 }

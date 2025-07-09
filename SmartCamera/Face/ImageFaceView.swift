@@ -19,12 +19,12 @@ struct ImageFaceView: View {
                 .resizable()
                 .scaledToFit()
                 .overlay {
-                    if let faceRect = viewModel.face?.normalizedRect {
+                    ForEach(viewModel.faces, id: \.landmarkObservation.uuid) { face in
+                        let faceRect = face.normalizedRect
                         BoundingBox(normalizedRect: faceRect)
                             .stroke(.orange, lineWidth: 1)
-                    }
 
-                    if let landmarkObservation = viewModel.face?.landmarkObservation {
+                        let landmarkObservation = face.landmarkObservation
                         if let faceContour = landmarkObservation.landmarks?.faceContour {
                             FaceLandmark(region: faceContour)
                                 .stroke(.blue, lineWidth: 2)
