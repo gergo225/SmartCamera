@@ -11,6 +11,7 @@ import _PhotosUI_SwiftUI
 
 struct FaceItem {
     let normalizedRect: NormalizedRect
+    let landmarkObservation: FaceObservation
 }
 
 @Observable

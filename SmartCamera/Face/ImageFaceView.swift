@@ -21,7 +21,24 @@ struct ImageFaceView: View {
                 .overlay {
                     if let faceRect = viewModel.face?.normalizedRect {
                         BoundingBox(normalizedRect: faceRect)
-                            .stroke(.orange, lineWidth: 2)
+                            .stroke(.orange, lineWidth: 1)
+                    }
+
+                    if let landmarkObservation = viewModel.face?.landmarkObservation {
+                        if let faceContour = landmarkObservation.landmarks?.faceContour {
+                            FaceLandmark(region: faceContour)
+                                .stroke(.blue, lineWidth: 2)
+                        }
+
+                        if let leftEye = landmarkObservation.landmarks?.leftEye {
+                            FaceLandmark(region: leftEye)
+                                .stroke(.green, lineWidth: 2)
+                        }
+
+                        if let rightEye = landmarkObservation.landmarks?.rightEye {
+                            FaceLandmark(region: rightEye)
+                                .stroke(.green, lineWidth: 2)
+                        }
                     }
                 }
         } else {

@@ -109,11 +109,17 @@ final class VisionManager {
 
             let faceObservations = try await imageHandler.perform(detectFacesRequest)
 
-            guard let faceRectangle = faceObservations.first  else {
+            var detectLandmarksRequest = DetectFaceLandmarksRequest()
+            detectLandmarksRequest.inputFaceObservations = faceObservations
+
+            let faceLandmarks = try await imageHandler.perform(detectLandmarksRequest)
+
+            guard let faceRectangle = faceObservations.first, let faceLandmark = faceLandmarks.first else {
                 return nil
             }
+            let faceRect = faceRectangle.boundingBox
 
-            return FaceItem(normalizedRect: faceRectangle.boundingBox)
+            return FaceItem(normalizedRect: faceRect, landmarkObservation: faceLandmark)
         } catch {
             print("Failed to detect face: \(error.localizedDescription)")
             return nil
