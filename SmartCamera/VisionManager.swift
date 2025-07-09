@@ -10,8 +10,8 @@ import CoreImage
 final class VisionManager {
     static let shared = VisionManager()
 
-    func detectImageContours(url: URL, showNestedContours: Bool = false) async -> [CGPoint] {
-        let imageHandler = VNImageRequestHandler(url: url)
+    func detectImageContours(data: Data, showNestedContours: Bool = false) async -> [CGPoint] {
+        let imageHandler = VNImageRequestHandler(data: data)
         return await detectImageContours(handler: imageHandler, showNestedContours: showNestedContours)
     }
 
@@ -62,10 +62,13 @@ final class VisionManager {
         }
     }
 
-    func detectImageForegroundMask(url: URL) async -> CIImage? {
-        do {
-            let imageHandler = VNImageRequestHandler(url: url)
+    func detectImageForegroundMask(data: Data) async -> CIImage? {
+        let imageHandler = VNImageRequestHandler(data: data)
+        return await detectImageForegroundMask(handler: imageHandler)
+    }
 
+    private func detectImageForegroundMask(handler: VNImageRequestHandler) async -> CIImage? {
+        do {
             return try await withCheckedThrowingContinuation { continuation in
                 let request = VNGenerateForegroundInstanceMaskRequest { request, error in
                     if let error {
@@ -80,7 +83,7 @@ final class VisionManager {
                     }
 
                     do {
-                        let mask = try result.generateScaledMaskForImage(forInstances: result.allInstances, from: imageHandler)
+                        let mask = try result.generateScaledMaskForImage(forInstances: result.allInstances, from: handler)
                         let maskImage = CIImage(cvPixelBuffer: mask)
                         continuation.resume(returning: maskImage)
                     } catch {
@@ -90,7 +93,7 @@ final class VisionManager {
                 }
 
                 do {
-                    try imageHandler.perform([request])
+                    try handler.perform([request])
                 } catch {
                     print("Failed to perform request: \(error.localizedDescription)")
                 }

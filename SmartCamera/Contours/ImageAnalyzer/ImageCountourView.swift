@@ -7,19 +7,18 @@
 
 import SwiftUI
 import Vision
+import PhotosUI
 
 struct ImageContourView: View {
-    let imageUrl: URL
-
     @State private var viewModel = ImageContourViewModel()
-    @State private var image: UIImage? = nil
     @State private var shouldShowDetailedContours = false
+    @State private var selectedImage: PhotosPickerItem?
 
     var body: some View {
         VStack {
-            if let image {
+            if let photo = viewModel.photo {
                 ZStack {
-                    Image(uiImage: image)
+                    Image(uiImage: photo)
                         .resizable()
                         .scaledToFit()
                         .overlay {
@@ -31,7 +30,13 @@ struct ImageContourView: View {
                         }
                 }
             } else {
-                Text("Loading image...")
+                PhotosPicker(selection: $selectedImage, matching: .images) {
+                    Text("Select an Image")
+                }
+                .onChange(of: selectedImage) { _, newImage in
+                    guard let newImage else { return }
+                    viewModel.analyzeImage(photo: newImage, showDetails: shouldShowDetailedContours)
+                }
             }
         }
         .padding()
@@ -44,16 +49,8 @@ struct ImageContourView: View {
             }
         }
         .onChange(of: shouldShowDetailedContours) { _, newValue in
-            viewModel.analyzeImage(url: imageUrl, showDetails: newValue)
-        }
-        .task {
-            image = UIImage(contentsOfFile: imageUrl.path())
-
-            if image == nil {
-                print("Failed to load image at: \(imageUrl.absoluteURL)")
-            }
-
-            viewModel.analyzeImage(url: imageUrl)
+            guard let selectedImage else { return }
+            viewModel.analyzeImage(photo: selectedImage, showDetails: newValue)
         }
     }
 }

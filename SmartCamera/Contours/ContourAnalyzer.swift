@@ -51,8 +51,7 @@ struct ContourAnalyzer: View {
     private func page(for destination: ContourDestination) -> some View {
         switch destination {
         case .image:
-            let imageUrl = Bundle.main.url(forResource: "horizon", withExtension: "jpg")!
-            ImageContourView(imageUrl: imageUrl)
+            ImageContourView()
         case .video:
             VideoContourView()
         }

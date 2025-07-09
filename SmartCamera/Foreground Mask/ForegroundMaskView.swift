@@ -6,19 +6,18 @@
 //
 
 import SwiftUI
+import PhotosUI
 
 struct ForegroundMaskView: View {
-    let imageUrl: URL
-
     @State private var viewModel = ForegroundMaskViewModel()
-    @State private var image: UIImage? = nil
     @State private var shouldShowMask = true
+    @State private var selectedPhoto: PhotosPickerItem?
 
     var body: some View {
         VStack {
-            if let image {
+            if let photo = viewModel.photo {
                 ZStack {
-                    Image(uiImage: image)
+                    Image(uiImage: photo)
                         .resizable()
                         .scaledToFit()
 
@@ -42,18 +41,15 @@ struct ForegroundMaskView: View {
                     }
                 )
             } else {
-                Text("Loading image...")
+                PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                    Text("Select a Photo")
+                }
+                .onChange(of: selectedPhoto) { _, newPhoto in
+                    guard let newPhoto else { return }
+                    viewModel.analyzeImage(photo: newPhoto)
+                }
             }
         }
         .padding()
-        .task {
-            image = UIImage(contentsOfFile: imageUrl.path())
-
-            if image == nil {
-                print("Failed to load image at: \(imageUrl.absoluteURL)")
-            }
-
-            viewModel.analyzeImage(url: imageUrl)
-        }
     }
 }
