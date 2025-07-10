@@ -33,10 +33,6 @@ struct ImageContourView: View {
                 PhotosPicker(selection: $selectedImage, matching: .images) {
                     Text("Select an Image")
                 }
-                .onChange(of: selectedImage) { _, newImage in
-                    guard let newImage else { return }
-                    viewModel.analyzeImage(photo: newImage, showDetails: shouldShowDetailedContours)
-                }
             }
         }
         .padding()
@@ -47,10 +43,22 @@ struct ImageContourView: View {
                 }
                 .disabled(viewModel.isAnalyzing)
             }
+
+            if selectedImage != nil {
+                ToolbarItem(placement: .topBarTrailing) {
+                    PhotosPicker(selection: $selectedImage, matching: .images) {
+                        Text("Change Image")
+                    }
+                }
+            }
         }
         .onChange(of: shouldShowDetailedContours) { _, newValue in
             guard let selectedImage else { return }
             viewModel.analyzeImage(photo: selectedImage, showDetails: newValue)
+        }
+        .onChange(of: selectedImage) { _, newImage in
+            guard let newImage else { return }
+            viewModel.analyzeImage(photo: newImage, showDetails: shouldShowDetailedContours)
         }
     }
 }

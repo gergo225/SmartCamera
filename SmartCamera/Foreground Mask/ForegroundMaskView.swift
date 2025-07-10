@@ -11,7 +11,7 @@ import PhotosUI
 struct ForegroundMaskView: View {
     @State private var viewModel = ForegroundMaskViewModel()
     @State private var shouldShowMask = true
-    @State private var selectedPhoto: PhotosPickerItem?
+    @State private var selectedImage: PhotosPickerItem?
 
     var body: some View {
         VStack {
@@ -41,15 +41,25 @@ struct ForegroundMaskView: View {
                     }
                 )
             } else {
-                PhotosPicker(selection: $selectedPhoto, matching: .images) {
-                    Text("Select a Photo")
-                }
-                .onChange(of: selectedPhoto) { _, newPhoto in
-                    guard let newPhoto else { return }
-                    viewModel.analyzeImage(photo: newPhoto)
+                PhotosPicker(selection: $selectedImage, matching: .images) {
+                    Text("Select an Image")
                 }
             }
         }
         .padding()
+        .toolbar {
+            if selectedImage != nil {
+                ToolbarItem(placement: .topBarTrailing) {
+                    PhotosPicker(selection: $selectedImage, matching: .images) {
+                        Text("Change Image")
+                    }
+                }
+            }
+
+        }
+        .onChange(of: selectedImage) { _, newImage in
+            guard let newImage else { return }
+            viewModel.analyzeImage(photo: newImage)
+        }
     }
 }
