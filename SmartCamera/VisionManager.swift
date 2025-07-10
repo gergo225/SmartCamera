@@ -124,4 +124,26 @@ final class VisionManager {
             return []
         }
     }
+
+    func detectHands(pixelBuffer: CVPixelBuffer) async -> [HandItem] {
+        do {
+            let imageHandler = ImageRequestHandler(pixelBuffer)
+
+            let detectHandsRequest = DetectHumanHandPoseRequest()
+
+            let handObservations = try await imageHandler.perform(detectHandsRequest)
+
+            let detectedHandPoses = handObservations.map { handObservation in
+                let handedness: Handedness = handObservation.chirality == .left ? .left : .right
+                let joints = handObservation.allJoints()
+
+                return HandItem(handedness: handedness, joints: joints)
+            }
+
+            return detectedHandPoses
+        } catch {
+            print("Failed to detect hand: \(error.localizedDescription)")
+            return []
+        }
+    }
 }

@@ -12,6 +12,7 @@ struct ContentView: View {
         case contours
         case foregroundMask
         case face
+        case hand
 
         var title: String {
             switch self {
@@ -21,10 +22,12 @@ struct ContentView: View {
                 "Foreground mask"
             case .face:
                 "Face detection"
+            case .hand:
+                "Hand detection"
             }
         }
 
-        static var allValues: [Destination] = [.contours, .foregroundMask, .face]
+        static var allValues: [Destination] = [.contours, .foregroundMask, .face, .hand]
     }
 
     var body: some View {
@@ -47,6 +50,8 @@ struct ContentView: View {
             ForegroundMaskAnalyzer()
         case .face:
             FaceAnalyzer()
+        case .hand:
+            HandAnalyzer()
         }
     }
 }
