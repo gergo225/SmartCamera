@@ -12,7 +12,7 @@ struct VideoHandView: View {
     @State private var videoSize: CGSize = .zero
     @State private var videoOffset: CGPoint = .zero
 
-    private let pointSize = CGSize(width: 3, height: 3)
+    private let pointSize = CGSize(width: 8, height: 8)
 
     var body: some View {
         VideoView(
@@ -24,11 +24,12 @@ struct VideoHandView: View {
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         .overlay {
-            Canvas { context, size in
+            Canvas { context, _ in
+                context.translateBy(x: videoOffset.x, y: videoOffset.y)
+
                 viewModel.hands.forEach { hand in
                     hand.joints.forEach { _, joint in
-                        let jointLocation = joint.location.toImageCoordinates(size, origin: .upperLeft)
-                        // TODO: fix: points not drawn exactly on video preview
+                        let jointLocation = joint.location.toImageCoordinates(videoSize, origin: .upperLeft)
                         let point = Circle().path(in: CGRect(origin: jointLocation, size: pointSize))
 
                         context.fill(point, with: .color(.red))
