@@ -10,6 +10,7 @@ import Vision
 @Observable
 class HandDrawingViewModel {
     var drawnPoints: [NormalizedPoint] = []
+    var handRect: NormalizedRect?
 
     private var isProcessing: Bool = false
     private let visionManager = VisionManager.shared
@@ -29,6 +30,12 @@ class HandDrawingViewModel {
                     self?.isProcessing = false
                 }
                 return
+            }
+
+            if let handRect = handJointsNormalizedRect(joints: Array(hand.joints.values)) {
+                DispatchQueue.main.async { [weak self] in
+                    self?.handRect = handRect
+                }
             }
 
             let isDrawing = areIndexFingerAndThumbTipsTouching(joints: hand.joints)
@@ -51,19 +58,36 @@ class HandDrawingViewModel {
         }
     }
 
-    func areIndexFingerAndThumbTipsTouching(joints: [HumanHandPoseObservation.JointName: Joint]) -> Bool {
+    private func areIndexFingerAndThumbTipsTouching(joints: [HumanHandPoseObservation.JointName: Joint]) -> Bool {
         guard let indexFingerTip = joints[.indexTip],
               let thumbTip = joints[.thumbTip] else {
             return false
         }
 
         let distance = indexFingerTip.distance(to: thumbTip)
-        let distanceThreshold = 0.05
+        guard let handRect else {
+            return false
+        }
+        let handSize = (handRect.width + handRect.height) / 2
+        let distanceThreshold = 0.15 * handSize
 
         return distance < distanceThreshold
     }
 
-    func middleBetweenIndexFingerAndThumbTip(joints: [HumanHandPoseObservation.JointName: Joint]) -> NormalizedPoint? {
+    private func handJointsNormalizedRect(joints: [Joint]) -> NormalizedRect? {
+        let jointPoints = joints.map { $0.location }
+
+        guard let xMin = jointPoints.min(by: { $0.x < $1.x })?.x,
+              let xMax = jointPoints.max(by: { $0.x < $1.x })?.x,
+              let yMin = jointPoints.min(by: { $0.y < $1.y })?.y,
+              let yMax = jointPoints.max(by: { $0.y < $1.y })?.y else {
+            return nil
+        }
+
+        return NormalizedRect(x: xMin, y: yMin, width: xMax - xMin, height: yMax - yMin)
+    }
+
+    private func middleBetweenIndexFingerAndThumbTip(joints: [HumanHandPoseObservation.JointName: Joint]) -> NormalizedPoint? {
         guard let indexFingerTip = joints[.indexTip],
               let thumbTip = joints[.thumbTip] else {
             return nil

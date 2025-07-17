@@ -12,6 +12,8 @@ struct HandDrawingView: View {
     @State private var videoSize: CGSize = .zero
     @State private var videoOffset: CGPoint = .zero
 
+    @State private var shouldShowHandBoundingBox: Bool = false
+
     private let pointSize = CGSize(width: 8, height: 8)
 
     var body: some View {
@@ -35,6 +37,18 @@ struct HandDrawingView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        }
+        .overlay {
+            if shouldShowHandBoundingBox, let handRect = viewModel.handRect {
+                BoundingBox(normalizedRect: handRect)
+                    .stroke(.blue, lineWidth: 10)
+                    .offset(x: videoOffset.x, y: videoOffset.y)
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Toggle("Hand Bounding Box", isOn: $shouldShowHandBoundingBox)
+            }
         }
     }
 }
