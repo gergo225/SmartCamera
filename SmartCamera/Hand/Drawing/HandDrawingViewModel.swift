@@ -48,6 +48,7 @@ class HandDrawingViewModel {
             }
 
             var previousDrawnPoints = drawnPoints
+            previousDrawnPoints.fillInGapFromLastPointIfNeeded(to: pointToDraw)
             previousDrawnPoints.append(pointToDraw)
             let newDrawnPoints = previousDrawnPoints
 
@@ -96,5 +97,42 @@ class HandDrawingViewModel {
         let x: CGFloat = (indexFingerTip.location.x + thumbTip.location.x) / 2
         let y: CGFloat = (indexFingerTip.location.y + thumbTip.location.y) / 2
         return NormalizedPoint(x: x, y: y)
+    }
+
+    private func addPointsInALine(to target: NormalizedPoint) {
+
+    }
+}
+
+private extension Array where Element == NormalizedPoint {
+    mutating func fillInGapFromLastPointIfNeeded(to target: NormalizedPoint, threshold: CGFloat = 0.02) {
+        guard let lastPoint = last, lastPoint.distance(to: target) < threshold else {
+            return
+        }
+
+        addPointsInALine(to: target)
+    }
+
+    private mutating func addPointsInALine(to target: NormalizedPoint) {
+        guard let lastPoint = last else { return }
+
+        let distributionDistance: CGFloat = 0.01
+        var points = [lastPoint]
+
+        while (points.last!.distance(to: target) > distributionDistance) {
+            let xToAdd = lastPoint.x + (target.x - lastPoint.x) * distributionDistance / lastPoint.distance(to: target)
+            let yToAdd = lastPoint.y + (target.y - lastPoint.y) * distributionDistance / lastPoint.distance(to: target)
+            let pointToAdd = NormalizedPoint(x: xToAdd, y: yToAdd)
+
+            points.append(pointToAdd)
+        }
+    }
+}
+
+extension NormalizedPoint {
+    func distance(to other: NormalizedPoint) -> CGFloat {
+        let dx = x - other.x
+        let dy = y - other.y
+        return sqrt(dx * dx + dy * dy)
     }
 }
