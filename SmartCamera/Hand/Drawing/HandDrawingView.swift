@@ -21,6 +21,7 @@ struct HandDrawingView: View {
             onFrameCaptured: {
                 viewModel.processFrame($0)
             },
+            cameraType: .front,
             videoFrameSize: $videoSize,
             videoFrameOffset: $videoOffset
         )

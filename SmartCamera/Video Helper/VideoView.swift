@@ -7,9 +7,25 @@
 
 import SwiftUI
 import AVFoundation
+import Accelerate
+
+enum CameraType {
+    case back
+    case front
+
+    var isMirrored: Bool {
+        switch self {
+        case .back:
+            false
+        case .front:
+            true
+        }
+    }
+}
 
 struct VideoView: UIViewControllerRepresentable {
     let onFrameCaptured: (CVPixelBuffer) -> Void
+    var cameraType: CameraType = .front
     @Binding var videoFrameSize: CGSize
     @Binding var videoFrameOffset: CGPoint
 
@@ -18,7 +34,7 @@ struct VideoView: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> some UIViewController {
         let viewController = UIViewController()
 
-        guard let videoCaptureDevice = AVCaptureDevice.default(for: .video),
+        guard let videoCaptureDevice = getVideoCaptureDevice(),
               let videoInput = try? AVCaptureDeviceInput(device: videoCaptureDevice),
               captureSession.canAddInput(videoInput) else {
             return viewController
@@ -52,6 +68,15 @@ struct VideoView: UIViewControllerRepresentable {
         return viewController
     }
 
+    private func getVideoCaptureDevice() -> AVCaptureDevice? {
+        switch cameraType {
+        case .back:
+            AVCaptureDevice.default(for: .video)
+        case .front:
+            AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front)
+        }
+    }
+
     func updateUIViewController(_ uiViewController: UIViewControllerType, context: Context) { }
 
     func makeCoordinator() -> Coordinator {
@@ -81,7 +106,13 @@ struct VideoView: UIViewControllerRepresentable {
                 }
             }
 
-            parent.onFrameCaptured(pixelBuffer)
+            if parent.cameraType.isMirrored {
+                if let mirroredPixelBuffer = mirrorPixelBuffer(pixelBuffer) {
+                    parent.onFrameCaptured(mirroredPixelBuffer)
+                }
+            } else {
+                parent.onFrameCaptured(pixelBuffer)
+            }
         }
 
         private func calculateImageSize(pixelBuffer: CVPixelBuffer, in frame: CGRect) -> CGSize {
@@ -105,6 +136,23 @@ struct VideoView: UIViewControllerRepresentable {
             let yOffset = frame.minY + (frame.height - imageSize.height) / 2
 
             return CGPoint(x: xOffset, y: yOffset)
+        }
+
+        private func mirrorPixelBuffer(_ pixelBuffer: CVPixelBuffer) -> CVPixelBuffer? {
+            let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
+            let width = CVPixelBufferGetWidth(pixelBuffer)
+
+            let transform = CGAffineTransform(scaleX: -1, y: 1)
+                .translatedBy(x: -CGFloat(width), y: 0)
+            let mirroredImage = ciImage.transformed(by: transform)
+
+            let context = CIContext()
+            var mirroredBuffer: CVPixelBuffer?
+            CVPixelBufferCreate(nil, width, CVPixelBufferGetHeight(pixelBuffer), CVPixelBufferGetPixelFormatType(pixelBuffer), nil, &mirroredBuffer)
+
+            guard let mirrored = mirroredBuffer else { return nil }
+            context.render(mirroredImage, to: mirrored)
+            return mirrored
         }
     }
 }
