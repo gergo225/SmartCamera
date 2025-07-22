@@ -19,7 +19,6 @@ final class VideoContourViewModel {
         guard !isProcessing else {
             return
         }
-        print("Processing frame...")
 
         isProcessing = true
         Task { [weak self] in

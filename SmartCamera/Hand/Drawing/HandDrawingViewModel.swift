@@ -12,23 +12,14 @@ class HandDrawingViewModel {
     var drawnPoints: [NormalizedPoint] = []
     var handRect: NormalizedRect?
 
-    private var isProcessing: Bool = false
     private let visionManager = VisionManager.shared
 
     func processFrame(_ pixelBuffer: CVPixelBuffer) {
-//        guard !isProcessing else {
-//            return
-//        }
-
-        isProcessing = true
         Task { [weak self] in
             guard let self else { return }
 
             let hands = await visionManager.detectHands(pixelBuffer: pixelBuffer)
             guard let hand = hands.first else {
-                DispatchQueue.main.async { [weak self] in
-                    self?.isProcessing = false
-                }
                 return
             }
 
@@ -41,9 +32,6 @@ class HandDrawingViewModel {
             let isDrawing = areIndexFingerAndThumbTipsTouching(joints: hand.joints)
             guard isDrawing,
                   let pointToDraw = middleBetweenIndexFingerAndThumbTip(joints: hand.joints) else {
-                DispatchQueue.main.async { [weak self] in
-                    self?.isProcessing = false
-                }
                 return
             }
 
@@ -54,7 +42,6 @@ class HandDrawingViewModel {
 
             DispatchQueue.main.async { [weak self] in
                 self?.drawnPoints = newDrawnPoints
-                self?.isProcessing = false
             }
         }
     }

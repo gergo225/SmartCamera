@@ -9,8 +9,10 @@ import SwiftUI
 
 struct HandDrawingView: View {
     @State private var viewModel = HandDrawingViewModel()
+    @State private var cameraManager = CameraManager()
     @State private var videoSize: CGSize = .zero
     @State private var videoOffset: CGPoint = .zero
+    @State private var cameraType: CameraType = .back
 
     @State private var shouldShowHandBoundingBox: Bool = false
 
@@ -21,9 +23,10 @@ struct HandDrawingView: View {
             onFrameCaptured: {
                 viewModel.processFrame($0)
             },
-            cameraType: .front,
+            cameraType: $cameraType,
             videoFrameSize: $videoSize,
-            videoFrameOffset: $videoOffset
+            videoFrameOffset: $videoOffset,
+            cameraSource: cameraManager
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         .overlay {
@@ -49,6 +52,14 @@ struct HandDrawingView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Toggle("Hand Bounding Box", isOn: $shouldShowHandBoundingBox)
+            }
+
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    cameraType.toggle()
+                } label: {
+                    Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90.camera")
+                }
             }
         }
     }

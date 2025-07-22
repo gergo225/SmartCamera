@@ -22,8 +22,6 @@ class ImageFaceViewModel {
     private let visionManager = VisionManager.shared
 
     func analyzeFace(photo: PhotosPickerItem) {
-        print("Analyzing face data...")
-        
         Task { [weak self] in
             guard let self else { return }
 

@@ -8,6 +8,7 @@
 import SwiftUI
 import AVFoundation
 import Accelerate
+import Combine
 
 enum CameraType {
     case back
@@ -21,69 +22,53 @@ enum CameraType {
             true
         }
     }
+
+    mutating func toggle() {
+        switch self {
+        case .back:
+            self = .front
+        case .front:
+            self = .back
+        }
+    }
 }
 
 struct VideoView: UIViewControllerRepresentable {
     let onFrameCaptured: (CVPixelBuffer) -> Void
-    var cameraType: CameraType = .front
+    @Binding var cameraType: CameraType
     @Binding var videoFrameSize: CGSize
     @Binding var videoFrameOffset: CGPoint
 
-    let captureSession = AVCaptureSession()
+    let cameraSource: CameraSource
+    private let preview = PreviewView()
 
     func makeUIViewController(context: Context) -> some UIViewController {
         let viewController = UIViewController()
 
-        guard let videoCaptureDevice = getVideoCaptureDevice(),
-              let videoInput = try? AVCaptureDeviceInput(device: videoCaptureDevice),
-              captureSession.canAddInput(videoInput) else {
-            return viewController
-        }
+        cameraSource.prepareForStreaming()
+        cameraSource.connect(to: preview)
 
-        captureSession.addInput(videoInput)
+        preview.previewLayer.frame = viewController.view.bounds
+        preview.previewLayer.videoGravity = .resizeAspect
+        viewController.view.layer.addSublayer(preview.layer)
 
-        let videoOutput = AVCaptureVideoDataOutput()
+        context.coordinator.previewLayer = preview.previewLayer
+        context.coordinator.startCapturingFrames()
 
-        if captureSession.canAddOutput(videoOutput) {
-            videoOutput.setSampleBufferDelegate(context.coordinator, queue: DispatchQueue(label: "videoQueue"))
-            captureSession.addOutput(videoOutput)
-        }
-
-        let previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
-        previewLayer.frame = viewController.view.bounds
-        previewLayer.videoGravity = .resizeAspect
-        viewController.view.layer.addSublayer(previewLayer)
-
-        context.coordinator.previewLayer = previewLayer
-
-        // Set output rotation to match rotation seen in preview, otherwise output is rotated by default to landscape
-        if let videoOutputConnection = videoOutput.connection(with: .video) {
-            videoOutputConnection.videoRotationAngle = previewLayer.connection!.videoRotationAngle
-        }
-
-        Task(priority: .background) {
-            captureSession.startRunning()
-        }
+        cameraSource.startStreaming()
 
         return viewController
     }
 
-    private func getVideoCaptureDevice() -> AVCaptureDevice? {
-        switch cameraType {
-        case .back:
-            AVCaptureDevice.default(for: .video)
-        case .front:
-            AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front)
-        }
+    func updateUIViewController(_ uiViewController: UIViewControllerType, context: Context) {
+        cameraSource.switchCamera(to: cameraType)
     }
-
-    func updateUIViewController(_ uiViewController: UIViewControllerType, context: Context) { }
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
     }
 
-    class Coordinator: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
+    class Coordinator: NSObject {
         var parent: VideoView
         var previewLayer: AVCaptureVideoPreviewLayer?
 
@@ -91,27 +76,30 @@ struct VideoView: UIViewControllerRepresentable {
             self.parent = parent
         }
 
-        func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-            guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+        func startCapturingFrames() {
+            Task { [weak self] in
+                guard let self else { return }
+                for await capturedFrame in await parent.cameraSource.frameStream {
+                    onFrameCaptured(capturedFrame)
+                }
+            }
+        }
 
+        func onFrameCaptured(_ pixelBuffer: CVPixelBuffer) {
             if let previewLayer, self.parent.videoFrameSize == .zero {
                 let previewFrame = previewLayer.frame
 
                 let imageSize = calculateImageSize(pixelBuffer: pixelBuffer, in: previewLayer.frame)
                 let imageOffset = calculateImageOffset(imageSize: imageSize, in: previewFrame)
 
-                DispatchQueue.main.async {
-                    self.parent.videoFrameSize = imageSize
-                    self.parent.videoFrameOffset = imageOffset
+                DispatchQueue.main.async { [weak self] in
+                    self?.parent.videoFrameSize = imageSize
+                    self?.parent.videoFrameOffset = imageOffset
                 }
             }
 
-            if parent.cameraType.isMirrored {
-                if let mirroredPixelBuffer = mirrorPixelBuffer(pixelBuffer) {
-                    parent.onFrameCaptured(mirroredPixelBuffer)
-                }
-            } else {
-                parent.onFrameCaptured(pixelBuffer)
+            DispatchQueue.main.async { [weak self] in
+                self?.parent.onFrameCaptured(pixelBuffer)
             }
         }
 
