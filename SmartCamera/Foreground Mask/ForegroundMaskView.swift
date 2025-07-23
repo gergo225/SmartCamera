@@ -16,19 +16,7 @@ struct ForegroundMaskView: View {
     var body: some View {
         VStack {
             if let photo = viewModel.photo {
-                ZStack {
-                    Image(uiImage: photo)
-                        .resizable()
-                        .scaledToFit()
-
-                    if let maskImage = viewModel.maskImage, shouldShowMask {
-                        Image(uiImage: maskImage)
-                            .resizable()
-                            .scaledToFit()
-                            .blendMode(.multiply)
-                            .opacity(0.6)
-                    }
-                }
+                imageView(originalImage: photo)
                 .onLongPressGesture(
                     minimumDuration: 0,
                     perform: {
@@ -61,5 +49,13 @@ struct ForegroundMaskView: View {
             guard let newImage else { return }
             viewModel.analyzeImage(photo: newImage)
         }
+    }
+
+    func imageView(originalImage: UIImage) -> some View {
+        let uiImage = shouldShowMask ? viewModel.modifiedImage : originalImage
+
+        return Image(uiImage: uiImage ?? originalImage)
+            .resizable()
+            .scaledToFit()
     }
 }
