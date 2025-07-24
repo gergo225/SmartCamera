@@ -34,6 +34,17 @@ struct ForegroundMaskView: View {
                 }
             }
         }
+        .safeAreaInset(edge: .bottom) {
+            Picker("Effect", selection: $viewModel.selectedFilter) {
+                ForEach(ImageFilter.allCases, id: \.self) { filterType in
+                    Text(filterType.title)
+                }
+            }
+            .onChange(of: viewModel.selectedFilter) { _, _ in
+                guard let selectedImage else { return }
+                viewModel.analyzeImage(photo: selectedImage)
+            }
+        }
         .padding()
         .toolbar {
             if selectedImage != nil {
@@ -43,7 +54,6 @@ struct ForegroundMaskView: View {
                     }
                 }
             }
-
         }
         .onChange(of: selectedImage) { _, newImage in
             guard let newImage else { return }

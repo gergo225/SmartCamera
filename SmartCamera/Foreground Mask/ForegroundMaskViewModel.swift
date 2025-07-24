@@ -15,6 +15,7 @@ import CoreImage.CIFilterBuiltins
 class ForegroundMaskViewModel {
     var photo: UIImage?
     var modifiedImage: UIImage?
+    var selectedFilter: ImageFilter = .blur
 
     private let visionManager = VisionManager.shared
     private var foregroundMask: CIImage?
@@ -37,30 +38,60 @@ class ForegroundMaskViewModel {
             }
 
             DispatchQueue.main.async { [weak self] in
-                self?.foregroundMask = maskImage
-                self?.applyBlurToBackground()
+                guard let self else { return }
+                foregroundMask = maskImage
+                applyFilterToBackground(imageFilter: selectedFilter)
             }
         }
     }
 
-
-    func applyBlurToBackground() {
+    func applyFilterToBackground(imageFilter: ImageFilter) {
         guard let foregroundMask,
               let cgImage = photo?.cgImage else {
             return
         }
         let ciImage = CIImage(cgImage: cgImage)
 
-        let filter = CIFilter.gaussianBlur()
-        filter.inputImage = ciImage
-        filter.radius = 20
+        let filter: CIFilter = {
+            switch imageFilter {
+            case .blur:
+                let blur = CIFilter.gaussianBlur()
+                blur.inputImage = ciImage
+                blur.radius = 20
+                return blur
+            case .sepia:
+                let darken = CIFilter.sepiaTone()
+                darken.inputImage = ciImage
+                return darken
+            case .pixel:
+                let pixel = CIFilter.pixellate()
+                pixel.inputImage = ciImage
+                pixel.center = CGPoint(x: 150, y: 150)
+                pixel.scale = 10
+                return pixel
+            case .comic:
+                let comic = CIFilter.comicEffect()
+                comic.inputImage = ciImage
+                return comic
+            case .edges:
+                let edges = CIFilter.edgeWork()
+                edges.inputImage = ciImage
+                edges.radius = 5
+                return edges
+            case .crystalize:
+                let crystalize = CIFilter.crystallize()
+                crystalize.inputImage = ciImage
+                crystalize.radius = 30
+                return crystalize
+            }
+        }()
 
-        guard let blurredBackground = filter.outputImage else {
+        guard let modifiedBackground = filter.outputImage else {
             return
         }
 
         let blendFilter = CIFilter.blendWithMask()
-        blendFilter.backgroundImage = blurredBackground
+        blendFilter.backgroundImage = modifiedBackground
         blendFilter.inputImage = ciImage
         blendFilter.maskImage = foregroundMask
 
