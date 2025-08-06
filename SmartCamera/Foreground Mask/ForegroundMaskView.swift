@@ -35,12 +35,13 @@ struct ForegroundMaskView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            Picker("Effect", selection: $viewModel.selectedFilter) {
-                ForEach(ImageFilter.allCases, id: \.self) { filterType in
-                    Text(filterType.title)
+            Picker("Effect", selection: $viewModel.selectedFilterType) {
+                ForEach(ImageFilterType.allCases) { filterType in
+                    Text(filterType.filter.title)
+                        .tag(filterType)
                 }
             }
-            .onChange(of: viewModel.selectedFilter) { _, _ in
+            .onChange(of: viewModel.selectedFilterType) { _, newValue in
                 guard let selectedImage else { return }
                 viewModel.analyzeImage(photo: selectedImage)
             }
