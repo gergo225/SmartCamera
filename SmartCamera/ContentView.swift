@@ -13,6 +13,7 @@ struct ContentView: View {
         case foregroundMask
         case face
         case hand
+        case aesthetics
 
         var title: String {
             switch self {
@@ -24,10 +25,12 @@ struct ContentView: View {
                 "Face detection"
             case .hand:
                 "Hand detection"
+            case .aesthetics:
+                "Aesthetics score"
             }
         }
 
-        static var allValues: [Destination] = [.contours, .foregroundMask, .face, .hand]
+        static var allValues: [Destination] = [.contours, .foregroundMask, .face, .hand, .aesthetics]
     }
 
     var body: some View {
@@ -52,6 +55,8 @@ struct ContentView: View {
             FaceAnalyzer()
         case .hand:
             HandAnalyzer()
+        case .aesthetics:
+            AestheticsView()
         }
     }
 }

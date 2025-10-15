@@ -146,4 +146,19 @@ final class VisionManager {
             return []
         }
     }
+
+    func getAestheticsScore(data: Data) async -> Double? {
+        do {
+            let imageHandler = ImageRequestHandler(data)
+
+            let aestheticsScoreRequest = CalculateImageAestheticsScoresRequest()
+
+            let aestheticsScoreResult = try await imageHandler.perform(aestheticsScoreRequest)
+
+            return Double(aestheticsScoreResult.overallScore)
+        } catch {
+            print("Failed to get aesthetics score: \(error.localizedDescription)")
+            return nil
+        }
+    }
 }
