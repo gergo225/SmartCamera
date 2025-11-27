@@ -15,7 +15,8 @@ import CoreImage.CIFilterBuiltins
 class ForegroundMaskViewModel {
     var photo: UIImage?
     var modifiedImage: UIImage?
-    var selectedFilterType: ImageFilterType = .blur
+
+    var selectedFilter: ImageFilterType = .blur
 
     private let visionManager = VisionManager.shared
     private var foregroundMask: CIImage?
@@ -40,7 +41,7 @@ class ForegroundMaskViewModel {
             DispatchQueue.main.async { [weak self] in
                 guard let self else { return }
                 foregroundMask = maskImage
-                applyFilterToBackground(imageFilter: selectedFilterType.filter)
+                applyFilterToBackground(imageFilter: selectedFilter.filter)
             }
         }
     }

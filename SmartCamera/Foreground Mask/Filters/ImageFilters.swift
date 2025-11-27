@@ -17,7 +17,7 @@ enum ImageFilterType: String, CaseIterable, Identifiable, Hashable {
     case edges
     case crystalize
 
-    var filter: BaseImageFilter {
+    var filter: any ImageFilter {
         switch self {
         case .blur:
             return BlurFilter()
@@ -33,84 +33,162 @@ enum ImageFilterType: String, CaseIterable, Identifiable, Hashable {
             return CrystalizeFilter()
         }
     }
+
+    var title: String {
+        switch self {
+        case .blur:
+            "Blur"
+        case .sepia:
+            "Sepia"
+        case .pixel:
+            "Pixellate"
+        case .comic:
+            "Comic"
+        case .edges:
+            "Edges"
+        case .crystalize:
+            "Crystalize"
+        }
+    }
 }
 
 protocol ImageFilter: Equatable, Hashable, NSObject, Identifiable {
-    var title: String { get }
-    var parameters: [FilterParameter] { get }
+    associatedtype Parameters: ImageFilterParameters
+
+    var filterType: ImageFilterType { get }
+    var parameters: Parameters { get set }
     func applyFilter(to image: CIImage) -> CIImage?
 }
 
 extension ImageFilter {
     static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.title == rhs.title && lhs.parameters == rhs.parameters
+        lhs.title == rhs.title
     }
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(title)
-        hasher.combine(parameters)
     }
 }
 
-class BaseImageFilter: NSObject, ImageFilter {
-    var title: String { "Base Filter" }
-    var parameters: [FilterParameter] { [] }
+extension ImageFilter {
+    var title: String {
+        filterType.title
+    }
+}
+
+protocol ImageFilterParameters: MutableCollection, RandomAccessCollection {
+    var parameters: [FilterParameter] { get set }
+}
+
+extension ImageFilterParameters {
+    var startIndex: Int {
+        parameters.startIndex
+    }
+
+    var endIndex: Int {
+        parameters.endIndex
+    }
+
+    subscript(position: Int) -> FilterParameter {
+        get { parameters[position] }
+        set { parameters[position] = newValue }
+    }
+
+    func index(after i: Int) -> Int {
+        parameters.index(after: i)
+    }
+}
+
+
+
+
+class BlurFilter: NSObject, ImageFilter {
+    struct Parameters: ImageFilterParameters {
+        var parameters: [FilterParameter]
+        var radius: FilterParameter
+
+        init() {
+            self.radius = FilterParameter(value: 20, range: 0...100, name: "Radius")
+            self.parameters = [radius]
+        }
+    }
+
+    var filterType: ImageFilterType = .blur
+
+    var parameters: Parameters = Parameters()
+
     func applyFilter(to image: CIImage) -> CIImage? {
-        return image
-    }
-}
-
-class BlurFilter: BaseImageFilter {
-    override var title: String { "Blur" }
-    override var parameters: [FilterParameter] { [radius] }
-
-    var radius = FilterParameter(value: 20, range: 0...100, name: "Radius")
-
-    override func applyFilter(to image: CIImage) -> CIImage? {
         let blur = CIFilter.gaussianBlur()
         blur.inputImage = image
-        blur.radius = radius.value
+        blur.radius = parameters.radius.value
 
         return blur.outputImage
     }
 }
 
-class SepiaFilter: BaseImageFilter {
-    override var title: String { "Sepia" }
-    override var parameters: [FilterParameter] { [intensity] }
+class SepiaFilter: NSObject, ImageFilter {
+    struct Parameters: ImageFilterParameters {
+        let intensity: FilterParameter
+        var parameters: [FilterParameter]
 
-    var intensity = FilterParameter(value: 0.7, range: 0...1, name: "Intensity")
+        init() {
+            self.intensity = FilterParameter(value: 0.7, range: 0...1, name: "Intensity")
+            self.parameters = [intensity]
+        }
+    }
 
-    override func applyFilter(to image: CIImage) -> CIImage? {
+    var filterType: ImageFilterType = .sepia
+
+    var parameters: Parameters = Parameters()
+
+    func applyFilter(to image: CIImage) -> CIImage? {
         let sepia = CIFilter.sepiaTone()
         sepia.inputImage = image
-        sepia.intensity = intensity.value
+        sepia.intensity = parameters.intensity.value
 
         return sepia.outputImage
     }
 }
 
-class PixellateFilter: BaseImageFilter {
-    override var title: String { "Pixellate" }
-    override var parameters: [FilterParameter] { [scale] }
+class PixellateFilter: NSObject, ImageFilter {
+    struct Parameters: ImageFilterParameters {
+        let scale: FilterParameter
+        var parameters: [FilterParameter]
 
-    var scale = FilterParameter(value: 10, range: 1...60, name: "Scale")
+        init() {
+            self.scale = FilterParameter(value: 10, range: 1...60, name: "Scale")
+            self.parameters = [scale]
+        }
+    }
 
-    override func applyFilter(to image: CIImage) -> CIImage? {
+    var filterType: ImageFilterType = .pixel
+
+    var parameters: Parameters = Parameters()
+
+    func applyFilter(to image: CIImage) -> CIImage? {
         let pixel = CIFilter.pixellate()
         pixel.inputImage = image
         pixel.center = CGPoint(x: 150, y: 150)
-        pixel.scale = scale.value
+        pixel.scale = parameters.scale.value
 
         return pixel.outputImage
     }
 }
 
-class ComicFilter: BaseImageFilter {
-    override var title: String { "Comicbook" }
-    override var parameters: [FilterParameter] { [] }
+class ComicFilter: NSObject, ImageFilter {
+    struct Parameters: ImageFilterParameters {
+        var parameters: [FilterParameter]
 
-    override func applyFilter(to image: CIImage) -> CIImage? {
+        init() {
+            self.parameters = []
+        }
+    }
+
+    var filterType: ImageFilterType = .comic
+
+    var parameters: Parameters = Parameters()
+
+    func applyFilter(to image: CIImage) -> CIImage? {
         let comic = CIFilter.comicEffect()
         comic.inputImage = image
 
@@ -118,31 +196,49 @@ class ComicFilter: BaseImageFilter {
     }
 }
 
-class EdgesFilter: BaseImageFilter {
-    override var title: String { "Edges" }
-    override var parameters: [FilterParameter] { [radius] }
+class EdgesFilter: NSObject, ImageFilter {
+    struct Parameters: ImageFilterParameters {
+        let radius: FilterParameter
+        var parameters: [FilterParameter]
 
-    var radius = FilterParameter(value: 5, range: 1...20, name: "Radius")
+        init() {
+            self.radius = FilterParameter(value: 5, range: 1...20, name: "Radius")
+            self.parameters = [radius]
+        }
+    }
 
-    override func applyFilter(to image: CIImage) -> CIImage? {
+    var filterType: ImageFilterType = .edges
+
+    var parameters: Parameters = Parameters()
+
+    func applyFilter(to image: CIImage) -> CIImage? {
         let edges = CIFilter.edgeWork()
         edges.inputImage = image
-        edges.radius = radius.value
+        edges.radius = parameters.radius.value
 
         return edges.outputImage
     }
 }
 
-class CrystalizeFilter: BaseImageFilter {
-    override var title: String { "Crystalize" }
-    override var parameters: [FilterParameter] { [radius] }
+class CrystalizeFilter: NSObject, ImageFilter {
+    struct Parameters: ImageFilterParameters {
+        let radius: FilterParameter
+        var parameters: [FilterParameter]
 
-    var radius = FilterParameter(value: 30, range: 5...100, name: "Radius")
+        init() {
+            self.radius = FilterParameter(value: 30, range: 5...100, name: "Radius")
+            self.parameters = [radius]
+        }
+    }
 
-    override func applyFilter(to image: CIImage) -> CIImage? {
+    var filterType: ImageFilterType = .crystalize
+
+    var parameters: Parameters = Parameters()
+
+    func applyFilter(to image: CIImage) -> CIImage? {
         let crystalize = CIFilter.crystallize()
         crystalize.inputImage = image
-        crystalize.radius = radius.value
+        crystalize.radius = parameters.radius.value
 
         return crystalize.outputImage
     }
